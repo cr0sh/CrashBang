@@ -79,6 +79,10 @@ class CrashBang extends PluginBase implements Listener {
         }
     }
 
+    public function onQuit(\pocketmine\event\player\PlayerQuitEvent $ev) {
+        $ev->getPlayer()->removeAllEffects();
+    }
+
     public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
         if(!($sender instanceof Player)) return true;
         if(count($args) === 0) {
