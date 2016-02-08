@@ -2,10 +2,30 @@
 
 namespace crashbang;
 
-class Description {
+class Skills {
+    const ZOMBIE = 0;
+    const EARTHQUAKE = 1;
+    const CONTRACT = 2;
+    const PLAGUE = 3;
+    const CREEPER = 4;
+    const BERSERKER = 5;
+    const VAMPIRE = 6;
+    const ASSASSIN = 7;
+    const HEAL = 8;
+    const BACKSTAB = 10;
+    const EYE_FOR_EYE = 11;
+    const IGNITE = 12;
+    const STORM = 13;
+    const UPGRADE = 14;
+    const REBORN = 16;
+    const INVINCIBLE = 17;
+    const BIG_EATER = 18;
+    const TRACE = 19;
+    const POISONED_DAGGER = 20;
+
     public static $rawdesc = <<<EOT
-좀비 - 30초간 구속 II와 재생 IV를 부여합니다. (이동 속도 -30%, 초당 피 1.66칸 재생)
-지진 - 가장 가까운 플레이어 둘에게 피해를 5 줍니다.
+좀비 - 15초간 구속 II, 10초간 재생 IV를 부여합니다. (이동 속도 -30%, 초당 피 1.66칸 재생)
+지진 - 가장 가까운 플레이어 둘에게 피해를 6 줍니다.
 계약 - 플레이어를 선택합니다. 자신이 죽으면 그 플레이어를 즉사시킵니다. 그 플레이어가 먼저 죽으면 피해를 10 입습니다.
 역병 - 자신을 제외한 모든 플레이어에게 10초간 멀미와 구속 I를 부여합니다.
 크리퍼 - 거리 5m 이내의 모든 플레이어(자신 포함)에게 피해를 15 줍니다.
@@ -27,14 +47,14 @@ class Description {
 독 묻은 검(패시브) - 3초마다 처음 때리는 공격은 피해를 4 추가로 줍니다.
 EOT;
 
-    public static $desc, $cooldown;
+    public static $desc, $cooldown, $passive;
 
     public static function init() {
         self::$desc = explode("\n", self::$rawdesc);
         self::$cooldown = array(
             30, // 좀비 0
             30, // 지진 1
-            0,  // 계약 2
+            60,  // 계약 2
             60, // 역병 3
             60, // 크리퍼 4
             0,  // 광전사(패시브) 5
@@ -53,6 +73,27 @@ EOT;
             0,  // 식신(패시브) 18
             60, // 추적 19
             0,  // 독 묻은 검(패시브) 20
+        );
+        self::$passive = array(
+            self::ZOMBIE => false,
+            self::EARTHQUAKE => false,
+            self::CONTRACT => false,
+            self::PLAGUE => false,
+            self::CREEPER => false,
+            self::BERSERKER => true,
+            self::VAMPIRE => true,
+            self::ASSASSIN => false,
+            self::HEAL => false,
+            self::BACKSTAB => true,
+            self::EYE_FOR_EYE => false,
+            self::IGNITE => false,
+            self::STORM => false,
+            self::UPGRADE => true,
+            self::REBORN => false,
+            self::INVINCIBLE => false,
+            self::BIG_EATER => true,
+            self::TRACE => false,
+            self::POISONED_DAGGER => true,
         );
     }
 }
