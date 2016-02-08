@@ -39,12 +39,12 @@ class CrashBang extends PluginBase implements Listener {
     public function onPreLogin(\pocketmine\event\player\PlayerPreLoginEvent $ev) {
         if($this->status > 0) {
             $ev->setCancelled();
-            $ev->getPlayer()->close("게임이 진행 중입니다.\n".TextFormat::AQUA.TextFormat::BOLD.$this->timer.TextFormat::RESET."초 뒤에 다시 시도해주세요.");
+            $ev->getPlayer()->close("게임이 진행 중입니다.\n".TextFormat::AQUA.TextFormat::BOLD.$this->timer.TextFormat::RESET."초 뒤에 다시 접속해주세요.");
         }
     }
 
     public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
-        if($sender->getName() === "CONSOLE") return true;
+        if(!($sender instanceof Player)) return true;
         if(count($args) === 0) {
             return false;
         }
