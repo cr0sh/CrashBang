@@ -48,7 +48,7 @@ class Timer extends PluginTask {
             }
         }
 
-        if($this->tick === 0) {
+        if($this->tick === 0 && $this->o->status === 2) {
             $this->o->cooldown[$p->getName()]--;
         }
 

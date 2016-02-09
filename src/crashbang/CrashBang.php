@@ -54,7 +54,7 @@ class CrashBang extends PluginBase implements Listener {
                 foreach($dirs as $p => $d) {
                     if(++$i >= 2) break;
                     $p = $this->getServer()->getPlayerExact($p);
-                    $ev = new EntityDamageByEntityEvent($ev->getPlayer(), $ev->getPlayer(), EntityDamageEvent::CAUSE_CONTACT, 6);
+                    $ev = new EntityDamageByEntityEvent($ev->getPlayer(), $p, EntityDamageEvent::CAUSE_CONTACT, 6);
                     $p->attack($ev->getFinalDamage(), $ev);
                 }
                 $this->startCooldown($ev->getPlayer());
@@ -186,6 +186,8 @@ class CrashBang extends PluginBase implements Listener {
 
     public function stop() {
         $this->status = 0;
+        foreach($this->getServer()->getOnlinePlayers() as $p) $p->removeAllEffects();
+        $this->getServer()->broadcastMessage("[CrashBang] 게임이 종료되었습니다.");
         $this->getServer()->getNetwork()->setName(TextFormat::GREEN."[입장 가능] ".TextFormat::RESET.$this->motd);
     }
 
