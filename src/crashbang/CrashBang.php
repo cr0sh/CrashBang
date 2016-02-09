@@ -11,6 +11,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use pocketmine\block\Block;
 use pocketmine\item\Item;
 use pocketmine\entity\Effect;
 
@@ -18,7 +19,7 @@ class CrashBang extends PluginBase implements Listener {
 
     const GAME_TIME = 500;
 
-    private $available, $picking, $ps, $motd, $tasks;
+    private $available, $picking, $ps, $motd, $tasks, $deaths, $lastEat;
     public $skill, $status, $timer, $cooldown;
 
     public function onEnable() {
@@ -33,6 +34,17 @@ class CrashBang extends PluginBase implements Listener {
     }
 
     public function onTouch(\pocketmine\event\player\PlayerInteractEvent $ev) {
+        if($ev->getBlock()->getID() === Block::CAKE_BLOCK) {
+            if(!isset($this->lastEat[$ev->getPlayer()->getName()])) $this->lastEat[$ev->getName()] = 0;
+            if($this->lastEat[$ev->getPlayer()->getName()] <= microtime(true)) {
+                $e = new EntityRegainHealthEvent($ev->getPlayer(), 4, EntityRegainHealthEvent::CAUSE_EATING);
+                $ev->getPlayer()->heal(4, $e);
+                $this->lastEat[$ev->getPlayer()->getName()] = microtime(true) + ($this->skills[$ev->getPlayer()->getName()] === Skills::BIG_EATER ? 1.5 : 5);
+                $ev->getPlayer()->sendMessage("[CrashBang] 체력이 회복되었습니다.");
+            } else {
+                $ev->getPlayer()->sendMessage("[CrashBang] 체력은 5초에 한 번만 회복이 가능합니다(식신은 1.5초)");
+            }
+        }
         if($this->status !== 2 or $ev->getItem()->getID() !== Item::BLAZE_ROD) return;
         $ev->setCancelled();
         if($this->cooldown[$ev->getPlayer()->getName()] > 0) {
@@ -47,7 +59,7 @@ class CrashBang extends PluginBase implements Listener {
             case Skills::EARTHQUAKE:
                 $dirs = array();
                 foreach($this->getServer()->getOnlinePlayers() as $p) {
-                    if($p->getName() == $ev->getPlayer()->getName()) continue;
+                    if($p->getName() === $ev->getPlayer()->getName()) continue;
                     $dirs[$p->getName()] = $p->distance($ev->getPlayer());
                 }
                 asort($dirs);
@@ -87,12 +99,30 @@ class CrashBang extends PluginBase implements Listener {
                 foreach($this->getServer()->getOnlinePlayers() as $p) {
                     $p->setOnFire(7);
                 }
+                break;
             case Skills::STORM:
                 foreach($this->getServer()->getOnlinePlayers() as $p) {
-                    if ($ev->getPlayer()->distanceSquared($p) > (22 ** 2)) continue;
+                    if ($p->getName() === $ev->getPlayer()->getName() or $ev->getPlayer()->distanceSquared($p) > (22 ** 2)) continue;
                     $e = new EntityDamageByEntityEvent($ev->getPlayer(), $p, EntityDamageEvent::CAUSE_ENTITY_ATTACK, 4);
                     $p->attack($e->getFinalDamage(), $e);
+                    $p->sendMessage("[CrashBang] 야 쓰레기! 폭풍저그 콩진호가 간다!")
+                    $p->sendMessage("[CrashBang] 야 쓰레기! 폭풍저그 콩진호가 간다!")
                 }
+                break;
+            case Skills::EQUALITY:
+                foreach($this->getServer()->getOnlinePlayers() as $p) $p->setHealth(8);
+                $this->getServer()->broadcastMessage("[CrashBang] 평등 스킬이 사용되었습니다.");
+                break;
+            case Skills::REBORN:
+                $this->ps[$ev->getPlayer()->getName()] = 1;
+                $ev->getPlayer()->kill();
+                $ev->getPlayer()->sendMessage("[CrashBang] 환생 시 추가 체력을 지급받습니다.");
+                break;
+            case Skills::INVINCIBLE:
+                $this->ps[$ev->getPlayer()->getName()] = microtime(true) + 5;
+                $ev->getPlayer()->sendMessage("[CrashBang] 5초간 무적 상태가 되어 모든 공격을 무시합니다.");
+                $ev->getPlayer()->sendMessage("[CrashBang] 자신도 공격할 수 없습니다.");
+                break;
         }
         $this->startCooldown($ev->getPlayer());
     }
@@ -100,29 +130,50 @@ class CrashBang extends PluginBase implements Listener {
     public function onHit(\pocketmine\event\entity\EntityDamageByEntityEvent $ev) {
         if($this->status !== 2) return;
         if(!($ev->getEntity() instanceof Player && $ev->getDamager() instanceof Player)) return;
-        if($ev->getDamager()->getInventory()->getItemInHand()->getID() !== Item::BLAZE_ROD) {
-            switch($this->skill[$ev->getDamager()->getName()]) {
-                case Skills::BERSERKER:
-                    $ev->setDamage(floor((20 - $ev->getDamager()->getHealth()) / 4) * 2, 5);
-                    break;
-                case Skills::VAMPIRE:
-                    $e = new EntityRegainHealthEvent($ev->getDamager(), 2, EntityRegainHealthEvent::CAUSE_MAGIC);
-                    $ev->getDamager()->heal(2, $e);
-                    break;
-                case Skills::STEALTH:
-                    $ev->getDamager()->removeEffect(Effect::INVISIBILITY);
-            }
-            if($this->skill[$ev->getEntity()->getName()] === Skills::EYE_FOR_EYE and $this->ps[$ev->getEntity()->getName()]-- > 0) {
-                if ($this->skill[$ev->getDamager->getName()] === Skills::EYE_FOR_EYE) return;
-                $e = new EntityDamageByEntityEvent($ev->getEntity(), $ev->getDamager(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, floor($ev->getFinalDamage() * 0.7));
-                $ev->getDamager()->attack($e->getFinalDamage(), $e);
-            }
-        } else {
+        if(
+            ($this->skill[$ev->getDamager()->getName()] === Skills::INVINCIBLE and
+            $this->ps[$ev->getDamager()->getName()] > microtime(true)) or
+            ($this->skill[$ev->getPlayer()->getName()] === Skills::INVINCIBLE and
+            $this->ps[$ev->getPlayer()->getName()] > microtime(true))
+        ) {
+            $ev->setCancelled();
+            return;
+        }
+
+        switch($this->skill[$ev->getDamager()->getName()]) {
+            case Skills::BERSERKER:
+                $ev->setDamage(floor((20 - $ev->getDamager()->getHealth()) / 4) * 2, 5);
+                break;
+            case Skills::VAMPIRE:
+                $e = new EntityRegainHealthEvent($ev->getDamager(), 2, EntityRegainHealthEvent::CAUSE_MAGIC);
+                $ev->getDamager()->heal(2, $e);
+                break;
+            case Skills::STEALTH:
+                $ev->getDamager()->removeEffect(Effect::INVISIBILITY);
+                break;
+            case Skills::UPGRADE:
+                $ev->setDamage($this->ps[$ev->getDamager()->getName()], 5);
+                break;
+            case Skills::POISONED_DAGGER:
+                $this->startCooldown($this->getDamager());
+                $ev->setDamage(5, 5);
+                break;
+        }
+
+        if($this->skill[$ev->getEntity()->getName()] === Skills::EYE_FOR_EYE and $this->ps[$ev->getEntity()->getName()]-- > 0) {
+            if ($this->skill[$ev->getDamager->getName()] === Skills::EYE_FOR_EYE) return;
+            $e = new EntityDamageByEntityEvent($ev->getEntity(), $ev->getDamager(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, floor($ev->getFinalDamage() * 0.7));
+            $ev->getDamager()->attack($e->getFinalDamage(), $e);
+        }
+
+        if($ev->getDamager()->getInventory()->getItemInHand()->getID() === Item::BLAZE_ROD) {
             $ev->setCancelled();
             if($this->cooldown[$ev->getDamager()->getName()] > 0) {
                 $ev->getDamager()->sendMessage("[CrashBang] 아직 스킬을 사용할 수 없습니다.");
+                $ev->setCancelled(false);
                 return;
             }
+            
             switch($this->skill[$ev->getDamager()->getName()]) {
                 case Skills::ASSASSIN:
                     $n = mt_rand(0, 99);
@@ -135,8 +186,32 @@ class CrashBang extends PluginBase implements Listener {
                         $ev->setDamage(15);
                     }
                     break;
+                case Skills::TRACE:
+                    $this->getServer()->getScheduler()->scheduleDelayedTask(new TraceTask($this, $ev->getDamager(), $ev->getEntity()), 7*20);
+                    $ev->getDamager()->sendMessage("[CrashBang] 7초 후 추적 대상" . $ev->getEntity()->getName() . "에게 이동합니다.");
+                    break;
+                default:
+                    $ev->setCancelled(false);
             }
             $this->startCooldown($ev->getDamager());
+        }
+    }
+
+    public function onDeath(\pocketmine\event\player\PlayerDeathEvent $ev) {
+        if(!isset($this->deaths[$ev->getPlayer()->getName()])) $this->deaths[$ev->getPlayer()->getName()] = 0;
+        $this->deaths[$ev->getPlayer()->getName()]++;
+        switch($this->skill[$ev->getPlayer()->getName()]) {
+            case Skills::UPGRADE:
+                $this->ps[$ev->getPlayer()->getName()] = 0;
+                $ev->getPlayer()->sendMessage("[CrashBang] 데미지 업그레이드가 초기화되었습니다.");
+        }
+    }
+
+    public function onRespawn(\pocketmine\event\player\PlayerRespawnEvent $ev) {
+        if($this->skill[$ev->getPlayer()->getName()] && $this->ps[$ev->getPlayer()->getName()] === 1) {
+            $ev->getPlayer()->setHealth(35);
+            $ev->getPlayer()->sendMessage("[CrashBang] 추가 체력이 지급되었습니다.");
+            $this->ps[$ev->getPlayer()->getName()] = 0;
         }
     }
 
@@ -177,7 +252,7 @@ class CrashBang extends PluginBase implements Listener {
                 $this->roulette();
                 break;
             case "stop":
-                if($this->status == 2) {
+                if($this->status !== 2) {
                     $sender->sendMessage("[CrashBang] 현재 사용할 수 없는 명령어입니다.");
                     break;
                 }
@@ -227,6 +302,8 @@ class CrashBang extends PluginBase implements Listener {
         $this->available = array();
         $this->picking = array();
         $this->cooldown = array();
+        $this->deaths = array();
+        $this->lastEat = array();
         $this->timer = 60 + self::GAME_TIME;
         $this->getServer()->broadcastMessage("[CrashBang] 능력 추첨을 시작합니다");
         $this->getServer()->broadcastMessage("[CrashBang] /cb <yes|no>로 능력을 정하세요.");
@@ -236,6 +313,7 @@ class CrashBang extends PluginBase implements Listener {
             $this->available[$k] = $k;
         }
         foreach($this->getServer()->getOnlinePlayers() as $p) {
+            $this->deaths[$p->getName()] = 0;
             $this->picking[$p->getName()] = true;
             $this->pick($p);
         }
@@ -262,13 +340,14 @@ class CrashBang extends PluginBase implements Listener {
             $this->cooldown[$p->getName()] = 0;
             switch($this->skill[$p->getName()]) {
                 case Skills::EYE_FOR_EYE:
+                case Skills::REBORN:
                     $this->ps[$p->getName()] = 0;
                     break;
                 case Skills::CONTRACT:
                     $this->ps[$p->getName()] = "";
                 case Skills::UPGRADE:
                     $this->ps[$p->getName()] = 0;
-                    $this->getServer()->getScheduler()->scheduleRepeatingTask(new UpgradeTask($this, $p), 30*20);
+                    $this->tasks[] = $this->getServer()->getScheduler()->scheduleRepeatingTask(new UpgradeTask($this, $p), 30*20);
             }
         }
         $this->getServer()->broadcastMessage("[CrashBang] 게임이 시작되었습니다.");

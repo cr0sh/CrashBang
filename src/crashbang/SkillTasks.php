@@ -22,3 +22,20 @@ class UpgradeTask extends PluginTask {
     }
 
 }
+
+class TraceTask extends PluginTask {
+
+    private $player, $target;
+
+    public function __construct(Plugin $owner, Player $p, Player $target) {
+        $this->player = $player;
+        $this->target = $target;
+        parent::__construct($owner);
+    }
+
+    public function onRun($tick) {
+        $this->player->sendMessage("[CrashBang] 추적 대상에게 이동합니다");
+        $this->player->teleport($this->target);
+    }
+
+}
