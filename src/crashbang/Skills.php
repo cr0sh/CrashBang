@@ -12,11 +12,13 @@ class Skills {
     const VAMPIRE = 6;
     const ASSASSIN = 7;
     const HEAL = 8;
+    const STEALTH = 9;
     const BACKSTAB = 10;
     const EYE_FOR_EYE = 11;
     const IGNITE = 12;
     const STORM = 13;
     const UPGRADE = 14;
+    const EQUALITY = 15;
     const REBORN = 16;
     const INVINCIBLE = 17;
     const BIG_EATER = 18;
@@ -27,7 +29,7 @@ class Skills {
 좀비 - 15초간 구속 II, 10초간 재생 IV를 부여합니다. (이동 속도 -30%, 초당 피 1.66칸 재생)
 지진 - 가장 가까운 플레이어 둘에게 피해를 6 줍니다.
 계약 - 플레이어를 선택합니다. 자신이 죽으면 그 플레이어를 즉사시킵니다. 그 플레이어가 먼저 죽으면 피해를 10 입습니다.
-역병 - 자신을 제외한 모든 플레이어에게 10초간 멀미와 구속 I를 부여합니다.
+역병 - 자신을 제외한 모든 플레이어에게 7초간 멀미와 구속 I를 부여합니다.
 크리퍼 - 거리 5m 이내의 모든 플레이어(자신 포함)에게 피해를 15 줍니다.
 광전사(패시브) - 잃은 피 4당 추가 피해를 2 줍니다.
 뱀파이어(패시브) - 상대를 때릴 때마다 체력을 2 회복합니다.
@@ -35,7 +37,7 @@ class Skills {
 회복 - 3초간 회복 V를 얻습니다.(3초에 걸쳐 9 회복)
 은신 - 5초간 투명해집니다. 상대를 때리면 즉시 풀립니다.
 백스탭(패시브) 상대의 뒤(머리 시야 기준 90~270도)에서 공격할 경우 피해를 4 추가로 입힙니다.
-눈에는 눈 - 5초간 받은 피해의 절반을 되돌려줍니다.
+눈에는 눈 - 3번만 받은 피해의 70%를 되돌려줍니다.
 점화 - 모든 플레이어가 7초간 불에 탑니다.
 콩콩 - 22칸 이내의 모든 플레이어에게 피해를 2/2+2*2 줍니다. 채팅에 폭풍저그가 나옵니다. (쿨타임 22*2초)
 강화(패시브) - 30초마다 영구적으로 상대를 때릴 때 피해를 1 추가합니다. 최대 5까지 올라갑니다.
@@ -84,11 +86,13 @@ EOT;
             self::VAMPIRE => true,
             self::ASSASSIN => false,
             self::HEAL => false,
+            self::STEALTH => false,
             self::BACKSTAB => true,
             self::EYE_FOR_EYE => false,
             self::IGNITE => false,
             self::STORM => false,
             self::UPGRADE => true,
+            self::EQUALITY => false,
             self::REBORN => false,
             self::INVINCIBLE => false,
             self::BIG_EATER => true,
