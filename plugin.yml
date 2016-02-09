@@ -9,6 +9,9 @@ commands:
   description: "A set of CrashBang commands"
   usage: "/cb <start|yes|no|stop|help|set>"
   permission: crashbang.command
+ helpall:
+  description: "Prints all skill descriptions"
+  usage: "/helpall"
 permissions:
  crashbang:
   default: false

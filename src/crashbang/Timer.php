@@ -20,6 +20,7 @@ class Timer extends PluginTask {
     public function onRun($tick) {
         if($this->tick === 0 and $this->o->status > 0) {
             if(--$this->o->timer == 0) $this->o->stop();
+            if($this->o->status === 1 and $this->o->timer === CrashBang::GAME_TIME) $this->o->start();
         }
         foreach(Server::getInstance()->getOnlinePlayers() as $p) $this->process($p);
         $this->tick = ++$this->tick % 20;
