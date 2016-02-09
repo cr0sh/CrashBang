@@ -55,10 +55,10 @@ class Timer extends PluginTask {
 
         if($this->o->status === 2) {
             if(Skills::$passive[$this->o->skill[$p->getName()]]) {
-                $msg .= "스킬 상태 : " . TextFormat::GREEN . "패시브(항상 적용)";
+                $msg .= "\n스킬 상태 : " . TextFormat::GREEN . "패시브(항상 적용)";
             } else {
                 if($this->o->cooldown[$p->getName()] > 0)
-                    $msg .= "\n스킬 상태 : ".TextFormat::RED . "사용 불가(쿨타임" . TextFormat::RESET . $this->o->cooldown[$p->getName()] . TextFormat::RED ."초)";
+                    $msg .= "\n스킬 상태 : ".TextFormat::RED . "사용 불가(쿨타임 " . TextFormat::RESET . $this->o->cooldown[$p->getName()] . TextFormat::RED ."초)";
                 else $msg .= "\n스킬 상태 : ".TextFormat::GREEN . "사용 가능";
             }
         }

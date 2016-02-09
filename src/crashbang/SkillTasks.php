@@ -3,7 +3,7 @@
 namespace crashbang;
 
 use pocketmine\scheduler\PluginTask;
-use pocketmine\plugin\Plugin
+use pocketmine\plugin\Plugin;
 
 class UpgradeTask extends PluginTask {
 
