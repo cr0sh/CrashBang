@@ -132,8 +132,12 @@ class CrashBang extends PluginBase implements Listener {
     }
 
     public function onHit(\pocketmine\event\entity\EntityDamageByEntityEvent $ev) {
-        if($this->status !== 2) {$ev->setCancelled(false); return;}
-        if(!($ev->getEntity() instanceof Player && $ev->getDamager() instanceof Player)) return;
+        if(!($ev->getEntity() instanceof Player) or !($ev->getDamager() instanceof Player)) return;
+        if($this->status !== 2) {
+            $ev->setCancelled();
+            $ev->getDamager()->sendMessage("[CrashBang] 정숙");
+            return;
+        }
         if(
             ($this->skill[$ev->getDamager()->getName()] === Skills::INVINCIBLE and
             $this->ps[$ev->getDamager()->getName()] > microtime(true)) or
@@ -144,34 +148,34 @@ class CrashBang extends PluginBase implements Listener {
             $ev->getDamager()->sendMessage("[CrashBang] 당신 또는 대상이 무적 상태이므로 공격이 무시됩니다.");
             return;
         }
-        if(in_array($this->skill[$ev->getDamager()->getName()], [Skills::BERSERKER, Skills::VAMPIRE, Skills::STEALTH, Skills::UPGRADE, Skills::POISONED_DAGGER]))
-        switch($this->skill[$ev->getDamager()->getName()]) {
-            case Skills::BERSERKER:
-                $ev->setDamage(floor((20 - $ev->getDamager()->getHealth()) / 4) * 2, 5);
-                break;
-            case Skills::VAMPIRE:
-                $e = new EntityRegainHealthEvent($ev->getDamager(), 2, EntityRegainHealthEvent::CAUSE_MAGIC);
-                $ev->getDamager()->heal(2, $e);
-                break;
-            case Skills::STEALTH:
-                $ev->getDamager()->removeEffect(Effect::INVISIBILITY);
-                break;
-            case Skills::UPGRADE:
-                $ev->setDamage($this->ps[$ev->getDamager()->getName()], 5);
-                break;
-            case Skills::POISONED_DAGGER:
-                $this->startCooldown($this->getDamager());
-                $ev->setDamage(5, 5);
-                break;
-        }
-
-        if($this->skill[$ev->getEntity()->getName()] === Skills::EYE_FOR_EYE and $this->ps[$ev->getEntity()->getName()]-- > 0) {
+        if(in_array($this->skill[$ev->getDamager()->getName()], [
+            Skills::BERSERKER, Skills::VAMPIRE, Skills::STEALTH,
+            Skills::UPGRADE, Skills::POISONED_DAGGER
+        ])){
+            switch($this->skill[$ev->getDamager()->getName()]) {
+                case Skills::BERSERKER:
+                    $ev->setDamage(floor((20 - $ev->getDamager()->getHealth()) / 4) * 2, 5);
+                    break;
+                case Skills::VAMPIRE:
+                    $e = new EntityRegainHealthEvent($ev->getDamager(), 2, EntityRegainHealthEvent::CAUSE_MAGIC);
+                    $ev->getDamager()->heal(2, $e);
+                    break;
+                case Skills::STEALTH:
+                    $ev->getDamager()->removeEffect(Effect::INVISIBILITY);
+                    break;
+                case Skills::UPGRADE:
+                    $ev->setDamage($this->ps[$ev->getDamager()->getName()], 5);
+                    break;
+                case Skills::POISONED_DAGGER:
+                    $this->startCooldown($this->getDamager());
+                    $ev->setDamage(5, 5);
+                    break;
+            }
+        } else if($this->skill[$ev->getEntity()->getName()] === Skills::EYE_FOR_EYE and $this->ps[$ev->getEntity()->getName()]-- > 0) {
             if ($this->skill[$ev->getDamager()->getName()] === Skills::EYE_FOR_EYE) return;
             $e = new EntityDamageByEntityEvent($ev->getEntity(), $ev->getDamager(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, floor($ev->getFinalDamage() * 0.7));
             $ev->getDamager()->attack($e->getFinalDamage(), $e);
-        }
-
-        if(
+        } else if(
             $ev->getDamager()->getInventory()->getItemInHand()->getID() === Item::BLAZE_ROD and
             in_array($this->skill[$ev->getDamager()->getName()], [Skills::ASSASSIN, Skills::TRACE])
         ) {
